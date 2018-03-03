@@ -242,6 +242,15 @@ func (o StreamOption) adaptCmd(cmd *exec.Cmd, name string, fn func(i interface{}
 	return nil
 }
 
+// Coders
+const (
+	CoderAC      = "ac"
+	CoderCABAC   = "cabac"
+	CoderCAVLC   = "cavlc"
+	CoderDefault = "default"
+	CoderVLC     = "vlc"
+)
+
 // Presets
 const (
 	PresetUltrafast = "ultrafast"
@@ -266,9 +275,7 @@ const (
 )
 
 // Rate controls
-const (
-
-)
+const ()
 
 // Tunes
 const (
@@ -311,7 +318,7 @@ type EncodingOptions struct {
 	BStrategy       *int
 	BufSize         *Number
 	Codec           []StreamOption
-	Coder           *bool
+	Coder           string
 	ConstantQuality *float64
 	CRF             *int
 	Filters         []StreamOption
@@ -363,12 +370,8 @@ func (o EncodingOptions) adaptCmd(cmd *exec.Cmd) (err error) {
 			return
 		}
 	}
-	if o.Coder != nil {
-		v := "0"
-		if *o.Coder {
-			v = "1"
-		}
-		cmd.Args = append(cmd.Args, "-coder", v)
+	if len(o.Coder) > 0 {
+		cmd.Args = append(cmd.Args, "-coder", o.Coder)
 	}
 	if o.ConstantQuality != nil {
 		cmd.Args = append(cmd.Args, "-cq", strconv.FormatFloat(*o.ConstantQuality, 'f', 3, 64))
