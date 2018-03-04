@@ -236,7 +236,7 @@ func (o StreamOption) adaptCmd(cmd *exec.Cmd, name string, fn func(i interface{}
 	}
 	v, err := fn(o.Value)
 	if err != nil {
-		err = errors.Wrapf(err, "astiffmpeg: adapting cmd for stream option %s failed", name)
+		return errors.Wrapf(err, "astiffmpeg: adapting cmd for stream option %s failed", name)
 	}
 	cmd.Args = append(cmd.Args, f, v)
 	return nil
