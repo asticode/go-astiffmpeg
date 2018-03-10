@@ -178,9 +178,18 @@ func (o InputOptions) adaptCmd(cmd *exec.Cmd) (err error) {
 	return
 }
 
+// Deinterlacing modes
+const (
+	DeinterlacingModeAdaptive = "adaptive"
+	DeinterlacingModeBob      = "bob"
+	DeinterlacingModeWeave    = "weave"
+)
+
 // DecodingOptions represents decoding options
 type DecodingOptions struct {
 	Codec                      *StreamOption
+	DeinterlacingMode          string
+	DropSecondField            *bool
 	HardwareAcceleration       string
 	HardwareAccelerationDevice *int
 }
@@ -191,6 +200,16 @@ func (o DecodingOptions) adaptCmd(cmd *exec.Cmd) (err error) {
 		if o.HardwareAccelerationDevice != nil {
 			cmd.Args = append(cmd.Args, "-hwaccel_device", strconv.Itoa(*o.HardwareAccelerationDevice))
 		}
+	}
+	if len(o.DeinterlacingMode) > 0 {
+		cmd.Args = append(cmd.Args, "-deint", o.DeinterlacingMode)
+	}
+	if o.DropSecondField != nil {
+		v := "0"
+		if *o.DropSecondField {
+			v = "1"
+		}
+		cmd.Args = append(cmd.Args, "-drop_second_field", v)
 	}
 	if o.Codec != nil {
 		if err = o.Codec.adaptCmd(cmd, "-c", func(i interface{}) (string, error) {
