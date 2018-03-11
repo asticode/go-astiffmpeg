@@ -130,10 +130,14 @@ const (
 // StreamSpecifier represents a stream specifier
 type StreamSpecifier struct {
 	Index *int
+	Name  string
 	Type  string
 }
 
 func (s StreamSpecifier) string() (o string) {
+	if len(s.Name) > 0 {
+		return s.Name
+	}
 	if len(s.Type) > 0 {
 		o = s.Type
 	}
@@ -329,6 +333,13 @@ func (o OutputOptions) adaptCmd(cmd *exec.Cmd) (err error) {
 	return
 }
 
+// ComplexFilterOption represents complex filter options
+type ComplexFilterOption struct {
+	Filters       []string
+	InputStreams  []StreamSpecifier
+	OutputStreams []StreamSpecifier
+}
+
 // EncodingOptions represents encoding options
 type EncodingOptions struct {
 	AudioSamplerate *int
@@ -338,6 +349,7 @@ type EncodingOptions struct {
 	BufSize         *Number
 	Codec           []StreamOption
 	Coder           string
+	ComplexFilters  []ComplexFilterOption
 	ConstantQuality *float64
 	CRF             *int
 	Filters         []StreamOption
@@ -391,6 +403,21 @@ func (o EncodingOptions) adaptCmd(cmd *exec.Cmd) (err error) {
 	}
 	if len(o.Coder) > 0 {
 		cmd.Args = append(cmd.Args, "-coder", o.Coder)
+	}
+	if len(o.ComplexFilters) > 0 {
+		var vs []string
+		for _, cf := range o.ComplexFilters {
+			var v string
+			for _, i := range cf.InputStreams {
+				v += "[" + i.string() + "]"
+			}
+			v += strings.Join(cf.Filters, ",")
+			for _, o := range cf.OutputStreams {
+				v += "[" + o.string() + "]"
+			}
+			vs = append(vs, v)
+		}
+		cmd.Args = append(cmd.Args, "-filter_complex", strings.Join(vs, ";"))
 	}
 	if o.ConstantQuality != nil {
 		cmd.Args = append(cmd.Args, "-cq", strconv.FormatFloat(*o.ConstantQuality, 'f', 3, 64))
