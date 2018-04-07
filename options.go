@@ -9,6 +9,7 @@ import (
 
 	"github.com/asticode/go-astilog"
 	"github.com/pkg/errors"
+	"math"
 )
 
 // GlobalOptions represents global options
@@ -98,10 +99,71 @@ type Number struct {
 	Value          interface{}
 }
 
+func numberFromString(i string) (n Number, err error) {
+	if strings.HasSuffix(i, "B") {
+		n.ByteMultiple = true
+		i = strings.TrimSuffix(i, "B")
+	}
+	if strings.HasSuffix(i, "i") {
+		n.BinaryMultiple = true
+		i = strings.TrimSuffix(i, "i")
+	}
+	if _, err := strconv.Atoi(string(i[len(i) - 1])); err != nil {
+		n.Prefix = string(i[len(i) - 1])
+		i = i[: len(i) - 1]
+	}
+	n.Value, err = strconv.ParseFloat(i, 64)
+	return
+}
+
+func (n Number) float64() (o float64) {
+	// Get initial value
+	switch n.Value.(type) {
+	case float64:
+		o = n.Value.(float64)
+	case int:
+		o = float64(n.Value.(int))
+	default:
+		// TODO Remove this log
+		astilog.Debugf("astiffmpeg: unlisted number type %#v", n.Value)
+		return
+	}
+
+	// Get byte multiplier
+	if n.ByteMultiple {
+		o *= 8
+	}
+
+	// Get binary multiplier
+	var m = 1000.0
+	if n.BinaryMultiple {
+		m = 1024.0
+	}
+
+	// Get prefix
+	switch strings.ToLower(n.Prefix) {
+	case "k":
+		o *= m
+	case "m":
+		o *= math.Pow(m, 2)
+	case "g":
+		o *= math.Pow(m, 3)
+	case "t":
+		o *= math.Pow(m, 4)
+	case "p":
+		o *= math.Pow(m, 5)
+	}
+	return
+}
+
 func (n Number) string() (o string) {
 	switch n.Value.(type) {
 	case float64:
 		o = strconv.FormatFloat(n.Value.(float64), 'f', 3, 64)
+		for o[len(o)-1] == '0' {
+			o = o[:len(o)-1]
+		}
+		o = strings.TrimSuffix(o, ".")
 	case int:
 		o = strconv.Itoa(n.Value.(int))
 	default:
