@@ -2,13 +2,11 @@ package astiffmpeg
 
 import (
 	"bytes"
+	"strconv"
+	"strings"
 	"time"
 
-	"strconv"
-
-	"strings"
-
-	"github.com/asticode/go-astitools/ptr"
+	"github.com/asticode/go-astikit"
 )
 
 // StdErrParser represents an object capable of parsing stderr
@@ -52,7 +50,6 @@ func (p defaultStdErrParser) Process(t time.Time, b *bytes.Buffer) {
 
 	// Execute callback
 	p.fn(r)
-	return
 }
 
 // DefaultStdErrResults represents default stderr results
@@ -82,27 +79,27 @@ func (p defaultStdErrParser) parseResults(b []byte) (r DefaultStdErrResults) {
 				// There may be other suffix, but we only support this one for now
 				v = strings.TrimSuffix(v, "kbits/s")
 				if p, err := strconv.ParseFloat(v, 64); err == nil {
-					r.Bitrate = astiptr.Float(p * 1000)
+					r.Bitrate = astikit.Float64Ptr(p * 1000)
 				}
 			case "frame":
 				if p, err := strconv.Atoi(v); err == nil {
-					r.Frame = astiptr.Int(p)
+					r.Frame = astikit.IntPtr(p)
 				}
 			case "fps":
 				if p, err := strconv.ParseFloat(v, 64); err == nil {
-					r.FPS = astiptr.Int(int(p))
+					r.FPS = astikit.IntPtr(int(p))
 				}
 			case "q":
 				if p, err := strconv.ParseFloat(v, 64); err == nil {
-					r.Q = astiptr.Float(p)
+					r.Q = astikit.Float64Ptr(p)
 				}
 			case "size":
 				if n, err := numberFromString(v); err == nil {
-					r.Size = astiptr.Int(int(n.float64()))
+					r.Size = astikit.IntPtr(int(n.float64()))
 				}
 			case "speed":
 				if p, err := strconv.ParseFloat(strings.TrimSuffix(v, "x"), 64); err == nil {
-					r.Speed = astiptr.Float(p)
+					r.Speed = astikit.Float64Ptr(p)
 				}
 			case "time":
 				// Split on .
@@ -128,7 +125,7 @@ func (p defaultStdErrParser) parseResults(b []byte) (r DefaultStdErrResults) {
 						d += time.Duration(p) * time.Second
 					}
 				}
-				r.Time = astiptr.Duration(d)
+				r.Time = astikit.DurationPtr(d)
 			}
 		}
 

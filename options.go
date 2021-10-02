@@ -1,17 +1,12 @@
 package astiffmpeg
 
 import (
+	"fmt"
+	"math"
 	"os/exec"
 	"strconv"
-
-	"fmt"
 	"strings"
-
-	"math"
 	"time"
-
-	"github.com/asticode/go-astilog"
-	"github.com/pkg/errors"
 )
 
 // GlobalOptions represents global options
@@ -126,8 +121,6 @@ func (n Number) float64() (o float64) {
 	case int:
 		o = float64(n.Value.(int))
 	default:
-		// TODO Remove this log
-		astilog.Debugf("astiffmpeg: unlisted number type %#v", n.Value)
 		return
 	}
 
@@ -169,8 +162,6 @@ func (n Number) string() (o string) {
 	case int:
 		o = strconv.Itoa(n.Value.(int))
 	default:
-		// TODO Remove this log
-		astilog.Debugf("astiffmpeg: unlisted number type %#v", n.Value)
 		return
 	}
 	o += n.Prefix
@@ -223,7 +214,7 @@ type Input struct {
 func (i Input) adaptCmd(cmd *exec.Cmd) (err error) {
 	if i.Options != nil {
 		if err = i.Options.adaptCmd(cmd); err != nil {
-			err = errors.Wrap(err, "astiffmpeg: adapting cmd for options failed")
+			err = fmt.Errorf("astiffmpeg: adapting cmd for options failed: %w", err)
 			return
 		}
 	}
@@ -239,7 +230,7 @@ type InputOptions struct {
 func (o InputOptions) adaptCmd(cmd *exec.Cmd) (err error) {
 	if o.Decoding != nil {
 		if err = o.Decoding.adaptCmd(cmd); err != nil {
-			err = errors.Wrap(err, "astiffmpeg: adapting cmd for decoding options failed")
+			err = fmt.Errorf("astiffmpeg: adapting cmd for decoding options failed: %w", err)
 			return
 		}
 	}
@@ -292,9 +283,9 @@ func (o DecodingOptions) adaptCmd(cmd *exec.Cmd) (err error) {
 			if v, ok := i.(string); ok {
 				return v, nil
 			}
-			return "", errors.New("astiffmpeg: value should be a string")
+			return "", fmt.Errorf("astiffmpeg: value should be a string: %w", err)
 		}); err != nil {
-			err = errors.Wrap(err, "astiffmpeg: adapting cmd for -c option failed")
+			err = fmt.Errorf("astiffmpeg: adapting cmd for -c option failed: %w", err)
 			return
 		}
 	}
@@ -310,7 +301,7 @@ type Output struct {
 func (o Output) adaptCmd(cmd *exec.Cmd) (err error) {
 	if o.Options != nil {
 		if err = o.Options.adaptCmd(cmd); err != nil {
-			err = errors.Wrap(err, "astiffmpeg: adapting cmd for output failed")
+			err = fmt.Errorf("astiffmpeg: adapting cmd for output failed: %w", err)
 			return
 		}
 	}
@@ -331,7 +322,7 @@ func (o StreamOption) adaptCmd(cmd *exec.Cmd, name string, fn func(i interface{}
 	}
 	v, err := fn(o.Value)
 	if err != nil {
-		return errors.Wrapf(err, "astiffmpeg: adapting cmd for stream option %s failed", name)
+		return fmt.Errorf("astiffmpeg: adapting cmd for stream option %s failed: %w", name, err)
 	}
 	cmd.Args = append(cmd.Args, f, v)
 	return nil
@@ -395,7 +386,7 @@ func (o OutputOptions) adaptCmd(cmd *exec.Cmd) (err error) {
 	}
 	if o.Encoding != nil {
 		if err = o.Encoding.adaptCmd(cmd); err != nil {
-			err = errors.Wrap(err, "astiffmpeg: adapting cmd for encoding options failed")
+			err = fmt.Errorf("astiffmpeg: adapting cmd for encoding options failed: %w", err)
 			return
 		}
 	}
@@ -450,9 +441,9 @@ func (o EncodingOptions) adaptCmd(cmd *exec.Cmd) (err error) {
 			if v, ok := i.(Number); ok {
 				return v.string(), nil
 			}
-			return "", errors.New("astiffmpeg: value should be a Number")
+			return "", fmt.Errorf("astiffmpeg: value should be a Number: %w", err)
 		}); err != nil {
-			err = errors.Wrapf(err, "astiffmpeg: adapting cmd for -b option #%d failed", idx)
+			err = fmt.Errorf("astiffmpeg: adapting cmd for -b option #%d failed: %w", idx, err)
 			return
 		}
 	}
@@ -467,9 +458,9 @@ func (o EncodingOptions) adaptCmd(cmd *exec.Cmd) (err error) {
 			if v, ok := i.(string); ok {
 				return v, nil
 			}
-			return "", errors.New("astiffmpeg: value should be a string")
+			return "", fmt.Errorf("astiffmpeg: value should be a string: %w", err)
 		}); err != nil {
-			err = errors.Wrapf(err, "astiffmpeg: adapting cmd for -codec option #%d failed", idx)
+			err = fmt.Errorf("astiffmpeg: adapting cmd for -codec option #%d failed: %w", idx, err)
 			return
 		}
 	}
@@ -502,9 +493,9 @@ func (o EncodingOptions) adaptCmd(cmd *exec.Cmd) (err error) {
 			if v, ok := i.(FilterOptions); ok {
 				return v.string(), nil
 			}
-			return "", errors.New("astiffmpeg: value should be a FilterOptions")
+			return "", fmt.Errorf("astiffmpeg: value should be a FilterOptions: %w", err)
 		}); err != nil {
-			err = errors.Wrapf(err, "astiffmpeg: adapting cmd for -filter option #%d failed", idx)
+			err = fmt.Errorf("astiffmpeg: adapting cmd for -filter option #%d failed: %w", idx, err)
 			return
 		}
 	}
@@ -525,9 +516,9 @@ func (o EncodingOptions) adaptCmd(cmd *exec.Cmd) (err error) {
 			if v, ok := i.(Number); ok {
 				return v.string(), nil
 			}
-			return "", errors.New("astiffmpeg: value should be a Number")
+			return "", fmt.Errorf("astiffmpeg: value should be a Number: %w", err)
 		}); err != nil {
-			err = errors.Wrapf(err, "astiffmpeg: adapting cmd for -maxrate option #%d failed", idx)
+			err = fmt.Errorf("astiffmpeg: adapting cmd for -maxrate option #%d failed: %w", idx, err)
 			return
 		}
 	}
@@ -536,9 +527,9 @@ func (o EncodingOptions) adaptCmd(cmd *exec.Cmd) (err error) {
 			if v, ok := i.(Number); ok {
 				return v.string(), nil
 			}
-			return "", errors.New("astiffmpeg: value should be a Number")
+			return "", fmt.Errorf("astiffmpeg: value should be a Number: %w", err)
 		}); err != nil {
-			err = errors.Wrapf(err, "astiffmpeg: adapting cmd for -minrate option #%d failed", idx)
+			err = fmt.Errorf("astiffmpeg: adapting cmd for -minrate option #%d failed: %w", idx, err)
 			return
 		}
 	}

@@ -3,19 +3,17 @@ package astiffmpeg
 import (
 	"bytes"
 	"context"
+	"fmt"
+	"os"
 	"os/exec"
 	"strings"
-
-	"github.com/asticode/go-astilog"
-	"github.com/pkg/errors"
 	"time"
-	"os"
 )
 
 // FFMpeg represents an entity capable of running an FFMpeg binary
 // https://ffmpeg.org/ffmpeg.html
 type FFMpeg struct {
-	binaryPath string
+	binaryPath   string
 	stdErrParser StdErrParser
 }
 
@@ -57,7 +55,7 @@ func (f *FFMpeg) Exec(ctx context.Context, g GlobalOptions, in []Input, out []Ou
 	// Inputs
 	for idx, i := range in {
 		if err = i.adaptCmd(cmd); err != nil {
-			err = errors.Wrapf(err, "astiffmpeg: adapting cmd for input #%d failed", idx)
+			err = fmt.Errorf("astiffmpeg: adapting cmd for input #%d failed: %w", idx, err)
 			return
 		}
 	}
@@ -65,15 +63,14 @@ func (f *FFMpeg) Exec(ctx context.Context, g GlobalOptions, in []Input, out []Ou
 	// Outputs
 	for idx, o := range out {
 		if err = o.adaptCmd(cmd); err != nil {
-			err = errors.Wrapf(err, "astiffmpeg: adapting cmd for output #%d failed", idx)
+			err = fmt.Errorf("astiffmpeg: adapting cmd for output #%d failed: %w", idx, err)
 			return
 		}
 	}
 
 	// Run cmd
-	astilog.Debugf("Executing %s", strings.Join(cmd.Args, " "))
 	if err = cmd.Run(); err != nil {
-		err = errors.Wrapf(err, "astiffmpeg: running %s failed with stderr %s", strings.Join(cmd.Args, " "), bufErr.Bytes())
+		err = fmt.Errorf("astiffmpeg: running %s failed with stderr %s: %w", strings.Join(cmd.Args, " "), bufErr.Bytes(), err)
 		return
 	}
 	return
