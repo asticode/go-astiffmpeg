@@ -417,6 +417,7 @@ type EncodingOptions struct {
 	CRF             *int
 	Filters         []StreamOption
 	Framerate       *float64
+	Frames          []StreamOption
 	GOP             *int
 	KeyintMin       *int
 	Level           *float64
@@ -424,6 +425,7 @@ type EncodingOptions struct {
 	Minrate         []StreamOption
 	Preset          string
 	Profile         string
+	Quality         []StreamOption
 	RateControl     string
 	SCThreshold     *int
 	Tune            string
@@ -523,7 +525,7 @@ func (o EncodingOptions) adaptCmd(cmd *exec.Cmd) (err error) {
 		}
 	}
 	for idx, ro := range o.Minrate {
-		if err = ro.adaptCmd(cmd, "-codec", func(i interface{}) (string, error) {
+		if err = ro.adaptCmd(cmd, "-minrate", func(i interface{}) (string, error) {
 			if v, ok := i.(Number); ok {
 				return v.string(), nil
 			}
@@ -539,6 +541,17 @@ func (o EncodingOptions) adaptCmd(cmd *exec.Cmd) (err error) {
 	if len(o.Profile) > 0 {
 		cmd.Args = append(cmd.Args, "-profile", o.Profile)
 	}
+	for idx, ro := range o.Quality {
+		if err = ro.adaptCmd(cmd, "-q", func(i interface{}) (string, error) {
+			if v, ok := i.(int); ok {
+				return strconv.Itoa(v), nil
+			}
+			return "", fmt.Errorf("astiffmpeg: value should be an int: %w", err)
+		}); err != nil {
+			err = fmt.Errorf("astiffmpeg: adapting cmd for -q option #%d failed: %w", idx, err)
+			return
+		}
+	}
 	if len(o.RateControl) > 0 {
 		cmd.Args = append(cmd.Args, "-rc", o.RateControl)
 	}
@@ -547,6 +560,17 @@ func (o EncodingOptions) adaptCmd(cmd *exec.Cmd) (err error) {
 	}
 	if len(o.Tune) > 0 {
 		cmd.Args = append(cmd.Args, "-tune", o.Tune)
+	}
+	for idx, ro := range o.Frames {
+		if err = ro.adaptCmd(cmd, "-frames", func(i interface{}) (string, error) {
+			if v, ok := i.(int); ok {
+				return strconv.Itoa(v), nil
+			}
+			return "", fmt.Errorf("astiffmpeg: value should be an int: %w", err)
+		}); err != nil {
+			err = fmt.Errorf("astiffmpeg: adapting cmd for -frames option #%d failed: %w", idx, err)
+			return
+		}
 	}
 	return
 }
@@ -562,17 +586,31 @@ func (r Ratio) string() string {
 
 // Scale represents a scale
 type Scale struct {
-	Width, Height int
+	Height *int
+	Width  *int
 }
 
 func (s Scale) string() string {
-	return fmt.Sprintf("%d:%d", s.Width, s.Height)
+	var ss []string
+	if s.Height != nil {
+		ss = append(ss, fmt.Sprintf("h=%d", *s.Height))
+	} else {
+		ss = append(ss, "h=-1")
+	}
+	if s.Width != nil {
+		ss = append(ss, fmt.Sprintf("w=%d", *s.Width))
+	} else {
+		ss = append(ss, "w=-1")
+	}
+	return strings.Join(ss, ":")
 }
 
 // FilterOptions represents filter options
 type FilterOptions struct {
 	SAR      *Ratio
+	Scale    *Scale
 	ScaleNPP *Scale
+	Select   string
 }
 
 func (o FilterOptions) add(k, v string) string {
@@ -584,8 +622,14 @@ func (o FilterOptions) string() string {
 	if o.SAR != nil {
 		items = append(items, o.add("setsar", o.SAR.string()))
 	}
+	if o.Scale != nil {
+		items = append(items, o.add("scale", o.Scale.string()))
+	}
 	if o.ScaleNPP != nil {
 		items = append(items, o.add("scale_npp", o.ScaleNPP.string()))
+	}
+	if o.Select != "" {
+		items = append(items, o.add("select", o.Select))
 	}
 	return strings.Join(items, ",")
 }

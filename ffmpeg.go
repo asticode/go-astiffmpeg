@@ -28,8 +28,8 @@ func (f *FFMpeg) SetStdErrParser(s StdErrParser) {
 }
 
 // Exec executes the binary with the specified options
-// ffmpeg [global_options] {[input_file_options] -i input_url} ... {[output_file_options] output_url} ...
-func (f *FFMpeg) Exec(ctx context.Context, g GlobalOptions, in []Input, out []Output) (err error) {
+// ffmpeg [global_options] {[input_file_options] -i input_url} ... [output_file_options] output_url
+func (f *FFMpeg) Exec(ctx context.Context, g GlobalOptions, in []Input, out Output) (err error) {
 	// Create cmd
 	var cmd = exec.CommandContext(ctx, f.binaryPath)
 	cmd.Env = os.Environ()
@@ -60,12 +60,10 @@ func (f *FFMpeg) Exec(ctx context.Context, g GlobalOptions, in []Input, out []Ou
 		}
 	}
 
-	// Outputs
-	for idx, o := range out {
-		if err = o.adaptCmd(cmd); err != nil {
-			err = fmt.Errorf("astiffmpeg: adapting cmd for output #%d failed: %w", idx, err)
-			return
-		}
+	// Output
+	if err = out.adaptCmd(cmd); err != nil {
+		err = fmt.Errorf("astiffmpeg: adapting cmd for output failed: %w", err)
+		return
 	}
 
 	// Run cmd
