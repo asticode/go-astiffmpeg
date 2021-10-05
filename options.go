@@ -412,6 +412,7 @@ type EncodingOptions struct {
 	BufSize         *Number
 	Codec           []StreamOption
 	Coder           string
+	ComplexFilter   string
 	ComplexFilters  []ComplexFilterOption
 	ConstantQuality *float64
 	CRF             *int
@@ -469,7 +470,9 @@ func (o EncodingOptions) adaptCmd(cmd *exec.Cmd) (err error) {
 	if len(o.Coder) > 0 {
 		cmd.Args = append(cmd.Args, "-coder", o.Coder)
 	}
-	if len(o.ComplexFilters) > 0 {
+	if len(o.ComplexFilter) > 0 {
+		cmd.Args = append(cmd.Args, "-filter_complex", o.ComplexFilter)
+	} else if len(o.ComplexFilters) > 0 {
 		var vs []string
 		for _, cf := range o.ComplexFilters {
 			var v string
