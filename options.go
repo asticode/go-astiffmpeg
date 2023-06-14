@@ -578,6 +578,29 @@ func (o EncodingOptions) adaptCmd(cmd *exec.Cmd) (err error) {
 	return
 }
 
+type PixelFormat string
+
+const (
+	PixelFormatRGBA PixelFormat = "rgba"
+)
+
+// Format represents a format filter
+type Format struct {
+	PixelFormats []PixelFormat
+}
+
+func (f Format) string() string {
+	var ss []string
+	if len(f.PixelFormats) > 0 {
+		var pfs []string
+		for _, pf := range f.PixelFormats {
+			pfs = append(pfs, string(pf))
+		}
+		ss = append(ss, fmt.Sprintf("pix_fmts=%s", strings.Join(pfs, "|")))
+	}
+	return strings.Join(ss, ":")
+}
+
 // Ratio represents a ration
 type Ratio struct {
 	Antecedent, Consequent int
@@ -610,6 +633,7 @@ func (s Scale) string() string {
 
 // FilterOptions represents filter options
 type FilterOptions struct {
+	Format   *Format
 	SAR      *Ratio
 	Scale    *Scale
 	ScaleNPP *Scale
@@ -622,6 +646,9 @@ func (o FilterOptions) add(k, v string) string {
 
 func (o FilterOptions) string() string {
 	var items []string
+	if o.Format != nil {
+		items = append(items, o.add("format", o.Format.string()))
+	}
 	if o.SAR != nil {
 		items = append(items, o.add("setsar", o.SAR.string()))
 	}
